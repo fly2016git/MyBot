@@ -31,4 +31,6 @@ for i in range(1000):
 
 correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+# 输出预测的标签值，tf.argmax(y, 1)：返回y中最大值对应的索引
+print(sess.run(tf.argmax(y, 1), feed_dict={x: batch_xs, y_: batch_ys}))
 print(accuracy.eval({x: mnist.test.images, y_: mnist.test.labels}))
