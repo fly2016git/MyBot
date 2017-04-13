@@ -22,15 +22,68 @@ def xavier_init(fan_in, fan_out, constant = 1):
     return tf.random_uniform((fan_in, fan_out), minval = low, maxval = high, dtype = tf.float32)
 
 
-class AdditiveGaussianNoiseAutoencoder(object):
+def standard_scale(X_train, X_test):
+    '''
+    对训练数据和测试数据进行标准化处理
+    '''
+    preprocessor = prep.StandardScaler().fit(X_train)
+    X_train = preprocessor.transform(X_train)
+    X_test = preprocessor.transform(X_test)
+    return X_train, X_test
+
+def get_random_block_from_data(data, batch_size):
+    '''
+    随机获取数据块
+    '''
+    start_index = np.random.randint(0, len(data) - batch_size)
+    return data[start_index:(start_index + batch_size)]
+
+mnist = input_data.read_data_sets('MNIST_data', one_hot=True) 
+
+def run(X_train=mnist.train.images, X_test=mnist.test.images):
+    # 标准化变换
+    X_train, X_test = standard_scale(X_train, X_test)
+    # 定义参数：总训练样本数、最大训练轮数、batch_size , 并设置每隔一轮显示一次cost
+    n_samples = int(mnist.train.num_examples)
+    training_epochs = 20
+    batch_size = 128
+    display_step = 1
     
+    # 创建自编码器实例
+    autoencoder = AdditiveGaussianNoiseAutoencoder(
+        n_input=784,
+        n_hidden = 200,
+        transfer_function=tf.nn.softplus,
+        optimizer= tf.train.AdamOptimizer(learning_rate=0.001),
+        scale=0.01                                 )
+    
+    
+    for epoch in range(training_epochs):
+        avg_cost = 0
+        total_batch = int(n_samples/batch_size)
+        for i in range(total_batch):
+            batch_xs = get_random_block_from_data(X_train, batch_size)
+            
+            cost = autoencoder.partial_fit(batch_xs)
+            avg_cost += cost / n_samples*batch_size
+            
+        if epoch%display_step == 0:
+            print('Epoch:', '%04d' % (epoch+1), 'cost=', "{:.9f}".format(avg_cost))
+            
+    print("total cost: " + str(autoencoder.calc_total_cost(X_test)))
+            
+
+class AdditiveGaussianNoiseAutoencoder(object):
+    '''
+    去噪自编码器
+    '''
     def __init__(self, n_input, n_hidden, transfer_function=tf.nn.softplus, optimizer = tf.train.AdamOptimizer(), scale = 0.1):
         self.n_input = n_input   
         self.n_hidden = n_hidden
         self.transfer = transfer_function
         self.scale = tf.placeholder(tf.float32)
-        self.training_scale = scale
-        network_weights = self._initialize_weights() #参数初始化
+        self.training_scale = scale   # 噪声系数
+        network_weights = self._initialize_weights() # 参数初始化
         self.weights = network_weights
         
         # model
@@ -88,14 +141,14 @@ class AdditiveGaussianNoiseAutoencoder(object):
         return self.sess.run(self.reconstruction, feed_dict = {self.x: X,
                                                                self.scale: self.training_scale
                                                                })
-        
+    # 获取隐含层的权重w1    
     def getWeights(self):
         return self.sess.run(self.weights['w1'])
 
+    # 获取隐含层的偏置系数b1
     def getBiases(self):
         return self.sess.run(self.weights['b1'])    
         
-        
-        
-        
+       
+           
         
