@@ -74,7 +74,7 @@ h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
 # 最后的softmax层生成10种分类
 W_fc2 = weight_variable([1024, 10])
-b_fc2 = bias_variable([10])
+b_fc2 = bias_variable([10]) 
 
 y_conv=tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
 

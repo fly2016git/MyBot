@@ -40,7 +40,7 @@ def dataproducer(batch_size, num_steps):
     batchlen = datalen//batch_size
     epcho_size = (batchlen - 1)//num_steps
     print(epcho_size)
-    data = tf.reshape(data[0 : batchlen*batch_size], [batch_size, batchlen])
+    data = tf.reshape(data[0 : batchlen*batch_size], [batch_size, batchlen])  # 变型
     print(data)
     i = tf.train.range_input_producer(epcho_size, shuffle=False).dequeue()
     print(i)
